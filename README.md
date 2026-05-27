@@ -12,7 +12,24 @@ Claude API로 **네이버 블로그 스타일** 글을 자동 생성하는 Strea
 - **썸네일 생성** — 검정 배경 1:1 대표 이미지. 후킹 문구는 Claude가 자동 제안, 포인트 색상 5종, PNG 다운로드
 - **Prompt caching** — 카테고리 SKILL을 캐싱해 호출 비용 절감
 
-## 🚀 설치 & 실행
+## ☁️ Streamlit Community Cloud 배포
+
+가장 추천하는 방식입니다. 설치 없이 웹 주소로 바로 접속해서 써요.
+
+1. 이 저장소를 본인 GitHub 계정으로 push
+2. [share.streamlit.io](https://share.streamlit.io) → **New app** → 저장소 선택
+3. **Main file path** 를 반드시 **`app/app.py`** 로 지정 (이게 안 맞으면 *"Main module does not exist"* 에러가 나요)
+4. Deploy
+
+### 키 설정 (둘 중 하나)
+
+- **방문자가 각자 키 입력 (공개 추천):** 아무것도 안 해도 됩니다. 각 방문자가 설정 탭에서 본인 키를 넣고, 그 키는 **세션 메모리에만** 있다가 사라져요. 서로 노출되지 않습니다.
+- **배포자가 기본 키 제공:** 앱 대시보드 → **Settings → Secrets** 에 아래를 붙여넣으세요. (이러면 비용은 배포자 계정에 청구됩니다)
+  ```toml
+  ANTHROPIC_API_KEY = "sk-ant-..."
+  ```
+
+## 💻 로컬 실행
 
 > **중요:** `~/Downloads`, `~/Desktop`은 macOS 권한 문제로 Python이 막힐 수 있어요. **홈 디렉터리(`~/blogmaker`)에 두세요.**
 
@@ -22,22 +39,18 @@ cd ~/blogmaker
 bash setup.sh
 ```
 
-`setup.sh`가 안정 버전 Python 탐색 → `venv` 생성 → 의존성 설치 → Streamlit 실행(`http://localhost:8501` 자동 오픈)까지 처리합니다.
+`setup.sh`가 안정 버전 Python 탐색 → `venv` 생성 → 의존성 설치 → Streamlit 실행(`http://localhost:8501` 자동 오픈)까지 처리합니다. 두 번째 실행부터는 `bash run.sh`.
 
-두 번째 실행부터는:
-
-```bash
-bash run.sh
-```
-
-수동 설치를 선호하면:
+수동 설치:
 
 ```bash
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
-streamlit run app.py
+streamlit run app/app.py
 ```
+
+로컬에서 키를 고정하려면 `.streamlit/secrets.toml.example`을 `.streamlit/secrets.toml`로 복사 후 키를 채우세요 (이 파일은 gitignore 처리됨).
 
 ## 🔑 첫 사용
 
@@ -63,20 +76,26 @@ streamlit run app.py
 ## 📂 구조
 
 ```
-blogmaker/
-├── app.py                  # Streamlit 메인 앱
-├── requirements.txt
-├── setup.sh / run.sh       # 설치·실행 스크립트
+blogmaker/                  # ← 저장소 루트
+├── app/
+│   ├── app.py              # Streamlit 메인 앱 (배포 시 Main file path)
+│   ├── requirements.txt
+│   └── skills/
+│       ├── _master.md      # 공통 작성 원칙
+│       └── *.md            # 카테고리별 톤 가이드 9종
+├── requirements.txt        # (루트, Streamlit Cloud 표준 위치)
+├── setup.sh / run.sh       # 로컬 설치·실행 스크립트
 ├── image_test.html         # 사진 미리보기 (브라우저 단독 실행)
-├── .streamlit/config.toml
-├── .config.example.json    # 설정 예시 (.config.json은 gitignore)
-├── skills/
-│   ├── _master.md          # 공통 작성 원칙
-│   └── *.md                # 카테고리별 톤 가이드 9종
+├── .streamlit/
+│   ├── config.toml
+│   └── secrets.toml.example # 키 설정 예시 (secrets.toml은 gitignore)
+├── assets/                 # 한글 폰트 넣는 곳 (선택)
 ├── .gitignore
 ├── LICENSE
 └── README.md
 ```
+
+API 키는 **디스크에 저장되지 않습니다.** 방문자가 입력한 키는 세션 메모리에만 있고, 배포자가 고정하려면 Streamlit Secrets를 씁니다.
 
 `skills/*.md`를 수정하면 다음 생성부터 즉시 반영돼요. 본인 블로그 스타일에 맞게 톤을 조정하세요.
 
