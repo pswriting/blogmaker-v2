@@ -59,11 +59,23 @@ def load_skill(filename: str) -> str:
 
 
 def get_api_client():
-    """Anthropic API 클라이언트 생성"""
-    api_key = st.session_state.get("api_key") or st.secrets.get("ANTHROPIC_API_KEY", "")
+    """Anthropic API 클라이언트 생성. 사용자가 설정 탭에서 입력한 키를 우선 사용."""
+    # 1순위: 사용자가 세션에 입력한 키
+    api_key = st.session_state.get("api_key", "")
+    
+    # 2순위: Streamlit Secrets (운영자가 직접 운영하는 경우)
     if not api_key:
-        st.error("⚠️ Anthropic API 키가 설정되지 않았습니다. '설정' 탭에서 입력해주세요.")
+        try:
+            api_key = st.secrets.get("ANTHROPIC_API_KEY", "")
+        except Exception:
+            # secrets.toml이 없거나 키가 없는 정상 케이스
+            api_key = ""
+    
+    if not api_key:
+        st.error("⚠️ Anthropic API 키가 필요합니다. **⚙️ 설정** 탭에서 본인 API 키를 입력해주세요.")
+        st.info("API 키 발급: https://console.anthropic.com → API Keys → Create Key")
         return None
+    
     return anthropic.Anthropic(api_key=api_key)
 
 
@@ -525,6 +537,20 @@ def main():
     st.title("📝 BlogMaker v2")
     st.caption("네이버 상위 블로그 패턴 학습 · 5단 골격 단계별 자동 생성 · Writey 연동")
     
+    # API 키 미입력 시 안내 배너
+    if not st.session_state.get("api_key"):
+        try:
+            has_secret = bool(st.secrets.get("ANTHROPIC_API_KEY", ""))
+        except Exception:
+            has_secret = False
+        
+        if not has_secret:
+            st.warning(
+                "👋 **처음 오셨나요?** 먼저 **⚙️ 설정** 탭에서 본인의 Anthropic API 키를 입력해주세요.\n\n"
+                "API 키 발급: [console.anthropic.com](https://console.anthropic.com) → API Keys → Create Key\n\n"
+                "🔒 입력한 키는 본인의 브라우저 세션에만 저장되며, 다른 사용자나 운영자가 볼 수 없습니다."
+            )
+    
     tab1, tab2, tab3 = st.tabs(["✍️ 블로그 작성", "📚 전자책 분해", "⚙️ 설정"])
     
     with tab1:
@@ -539,3 +565,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
