@@ -1,164 +1,95 @@
-# BlogMaker v2
+# 📝 BlogMaker
 
-> 네이버 상위 블로그 9편의 실측 패턴을 학습한 AI 블로그 자동 생성기
-> Writey 연동 · 5단 골격 단계별 생성 · 9개 카테고리별 톤 자동 분기
+Claude API로 **네이버 블로그 스타일** 글을 자동 생성하는 Streamlit 도구입니다. 5단 골격(도입→전환→본론→강조→클로징)으로 자연스러운 한국어 글을 쓰고, 카테고리별 맞춤 톤(9종), 무료 사진(Openverse) 자동 삽입, 검정 배경 썸네일 생성까지 한 곳에서 됩니다.
 
-CashMaker (cashmaker.co.kr) 자체 개발 도구.
+> ⚠️ 생성된 글은 초안입니다. 발행 전 사실 확인과 본인 톤에 맞는 다듬기를 권장해요.
 
----
+## ✨ 기능
 
-## 🎯 v1 대비 변경점
+- **5단 골격 단계별 생성** — 도입·전환·본론·강조·클로징을 순서대로 스트리밍 생성
+- **9개 카테고리별 SKILL** — IT 리뷰 / 금융 / 맛집·여행 / 건강·감정 / 교육 / 취업 / 행정·법률 / 가전 / 마케팅. 카테고리에 따라 어미·후킹·시각 패턴이 자동으로 바뀜
+- **무료 사진 자동 삽입** — 본문 속 `[[IMG: ...]]` 마커를 Openverse(CC 라이선스, API 키 불필요) 사진으로 교체. 작가 크레딧 자동 표기
+- **썸네일 생성** — 검정 배경 1:1 대표 이미지. 후킹 문구는 Claude가 자동 제안, 포인트 색상 5종, PNG 다운로드
+- **Prompt caching** — 카테고리 SKILL을 캐싱해 호출 비용 절감
 
-| 항목 | v1 | v2 |
-|---|---|---|
-| 생성 방식 | 한 번에 1편 | **5단 골격 단계별 생성** |
-| 카테고리 분기 | 없음 | **9개 카테고리별 SKILL.md 자동 로드** |
-| 패턴 학습 | 일반 LLM | **네이버 상위 블로그 9편 실측 패턴 적용** |
-| 해시태그 | 수동 | **자동 (메인 3~5 + 서브 15~20)** |
-| 전자책 연동 | 없음 | **PDF/DOCX/MD/TXT 업로드 → 50편 분해** |
-| 책임 회피 표현 | 없음 | **재테크/건강 카테고리 자동 면책 문구** |
+## 🚀 설치 & 실행
 
----
+> **중요:** `~/Downloads`, `~/Desktop`은 macOS 권한 문제로 Python이 막힐 수 있어요. **홈 디렉터리(`~/blogmaker`)에 두세요.**
 
-## 📁 디렉토리 구조
+```bash
+git clone https://github.com/<your-id>/blogmaker.git ~/blogmaker
+cd ~/blogmaker
+bash setup.sh
+```
+
+`setup.sh`가 안정 버전 Python 탐색 → `venv` 생성 → 의존성 설치 → Streamlit 실행(`http://localhost:8501` 자동 오픈)까지 처리합니다.
+
+두 번째 실행부터는:
+
+```bash
+bash run.sh
+```
+
+수동 설치를 선호하면:
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+streamlit run app.py
+```
+
+## 🔑 첫 사용
+
+1. **설정 탭** → Anthropic API 키 저장
+   ([console.anthropic.com/settings/keys](https://console.anthropic.com/settings/keys)에서 발급, `sk-ant-`로 시작)
+   키는 로컬 `.config.json`에만 저장되고 `.gitignore`로 커밋에서 제외됩니다.
+2. **블로그 작성 탭** → 카테고리·주제·본인 경험 입력 → 5단 골격 생성 → 합본 복사 / `.md` 다운로드
+3. **썸네일 탭** → 주제 입력 → 후킹 자동 제안 → 색상 선택 → 생성 → PNG 다운로드
+
+## 🖼 이미지 미리 보기 (선택)
+
+`image_test.html`을 브라우저에서 더블클릭하면 Streamlit 없이도 검색어별 Openverse 사진을 미리 볼 수 있어요.
+
+## 🔤 한글 폰트 (썸네일용)
+
+- **macOS / Windows**: 시스템 폰트를 자동 인식합니다 (AppleSDGothicNeo / 맑은 고딕).
+- **Linux 또는 인식 실패 시**: 한글 TTF를 `assets/font.ttf`로 넣어주세요. 예) [나눔고딕](https://hangeul.naver.com/font), Noto Sans KR.
+
+## 💰 비용
+
+기본 모델은 **Haiku 4.5**(가장 저렴). 본문 1편당 대략 5~15원. 설정 탭에서 Sonnet / Opus로 변경 가능(품질↑, 비용↑).
+
+## 📂 구조
 
 ```
-blogmaker_v2/
-├── app/
-│   ├── app.py              # Streamlit 메인 앱
-│   └── requirements.txt    # 의존성
+blogmaker/
+├── app.py                  # Streamlit 메인 앱
+├── requirements.txt
+├── setup.sh / run.sh       # 설치·실행 스크립트
+├── image_test.html         # 사진 미리보기 (브라우저 단독 실행)
+├── .streamlit/config.toml
+├── .config.example.json    # 설정 예시 (.config.json은 gitignore)
 ├── skills/
-│   ├── _master.md          # 공통 시스템 프롬프트
-│   ├── it_review.md
-│   ├── admin_legal.md
-│   ├── education.md
-│   ├── finance.md
-│   ├── career.md
-│   ├── food_travel.md
-│   ├── home_appliance.md
-│   ├── health_emotion.md
-│   └── marketing.md
-├── docs/
-│   └── blog_pattern_analysis_v2.md   # 9편 분석 보고서
-├── README.md
-└── .gitignore
+│   ├── _master.md          # 공통 작성 원칙
+│   └── *.md                # 카테고리별 톤 가이드 9종
+├── .gitignore
+├── LICENSE
+└── README.md
 ```
 
----
+`skills/*.md`를 수정하면 다음 생성부터 즉시 반영돼요. 본인 블로그 스타일에 맞게 톤을 조정하세요.
 
-## 🚀 빠른 시작
+## 🛠 트러블슈팅
 
-### 1. 로컬 실행
+| 증상 | 해결 |
+|---|---|
+| `Operation not permitted` | `~/blogmaker`로 옮기세요 (Downloads 권한 문제) |
+| `streamlit: command not found` | `source venv/bin/activate` 후 실행 |
+| `model_not_found` | 설정 탭에서 모델 변경 (Haiku 4.5 권장) |
+| 썸네일 한글 깨짐 | `assets/font.ttf`에 한글 폰트 추가 |
+| 사진 안 나옴 | Openverse 일시 장애 가능, 잠시 후 재시도 |
 
-```bash
-# 클론
-git clone https://github.com/[YOUR_USERNAME]/blogmaker-v2.git
-cd blogmaker-v2
+## 📄 라이선스
 
-# 가상환경 (권장)
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-
-# 의존성 설치
-pip install -r app/requirements.txt
-
-# 앱 실행
-streamlit run app/app.py
-```
-
-브라우저에서 자동으로 `http://localhost:8501` 열림.
-설정 탭에서 Anthropic API 키 입력 후 사용.
-
-### 2. Streamlit Cloud 배포
-
-1. 이 레포를 GitHub에 푸시
-2. [share.streamlit.io](https://share.streamlit.io) 로그인
-3. New app → 레포 선택 → main 파일: `app/app.py`
-4. Advanced settings → Secrets에 입력:
-   ```toml
-   ANTHROPIC_API_KEY = "sk-ant-..."
-   ```
-5. Deploy 클릭
-
----
-
-## 📝 사용 흐름
-
-### 단일 블로그 글 생성
-1. **카테고리 선택** (예: 재테크/투자)
-2. **주제 입력** (예: "QQQ 5년 적립식 매수 후기")
-3. **본인 경험/구체 사실 입력** (선택, 권장)
-4. **생성 버튼** → 5단계 순차 실시간 표시
-5. **합본 복사** 또는 **.md 다운로드**
-
-### 전자책 → 시리즈 분해 (Writey 연동)
-1. **전자책 업로드** (txt/md/pdf/docx)
-2. **카테고리 + 편수 선택** (기본 50편)
-3. **분해 시작** → JSON 형식으로 50개 주제 산출
-4. **각 주제를 탭 1에서 본문 생성**
-
----
-
-## 🧠 학습된 패턴 (9편 실측 데이터 기반)
-
-### 5단 골격 (전 카테고리 공통)
-도입 → 전환 → 본론 → 강조 → 클로징
-
-### 어미 3대 스펙트럼
-- `~ㅂ니다`: IT, 행정, 교육, 마케팅
-- `~이다 (반말)`: 재테크, 취업
-- `~에요/~어요`: 맛집, 가전, 건강
-
-### 후킹 패턴 4종
-1. 부정→긍정형 ("X도 아니다 / Y도 아니다 / 바로 Z다")
-2. 핵심 단축형 ("사실 핵심은 단 하나")
-3. 정체성 선언형 ("○○인 ○○이다")
-4. 의문 던지기형 ("정말 ○○일까요?")
-
-### 시각 패턴 5종
-- 직접 촬영 / 캡처 화면 / 표 정리 / 워터마크 / 손그림 일러스트
-
-자세한 내용은 [`docs/blog_pattern_analysis_v2.md`](docs/blog_pattern_analysis_v2.md) 참고.
-
----
-
-## ⚠️ 알려진 한계
-
-- **마케팅/1인사업 카테고리**: 9편 실측 데이터에 미포함. 본인 Brunch 글로 보완 학습 권장.
-- **자동 발행 (네이버 Open API)**: v2에서는 제외. 생성/복사까지만.
-- **이미지 자동 생성**: 시각 패턴 *가이드*만 제공. 실제 이미지는 사용자가 첨부.
-- **다국어**: 한국어 전용.
-
----
-
-## 🛠️ 트러블슈팅
-
-### "SKILL 파일을 찾을 수 없습니다" 오류
-`app.py` 위치 기준 `../skills/` 경로에 SKILL 파일이 있어야 함.
-디렉토리 구조 확인.
-
-### "anthropic.APIError: model_not_found"
-`app.py` 상단의 `MODEL_NAME` 변수를 사용 가능한 모델로 교체.
-사용 가능 모델 확인: https://docs.claude.com/en/docs/about-claude/models
-
-### PDF/DOCX 업로드 실패
-```bash
-pip install pypdf python-docx
-```
-
----
-
-## 📜 라이선스
-
-CashMaker 내부 사용. 외부 배포/판매 금지.
-
----
-
-## 📞 문의
-
-- 사이트: [cashmaker.co.kr](https://cashmaker.co.kr)
-- Kmong: 최상위 2% 컨설턴트 (4.9★, 760+ 거래)
-
----
-
-*Built for solo entrepreneurs who write daily.*
+MIT — 자유롭게 사용·수정·배포하세요. 생성 사진은 각 Openverse 항목의 CC 라이선스를 따릅니다.
